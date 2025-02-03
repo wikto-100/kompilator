@@ -65,17 +65,7 @@ namespace Compiler
       }
    }
 
-   void Driver::debugTreeDump()
-   {
-      if (astRoot)
-      {
-         AST::DumpAST(*astRoot);
-      }
-      else
-      {
-         std::cerr << "No root node to dump!!\n";
-      }
-   }
+   
 
    void Driver::analyze()
    {
@@ -117,16 +107,13 @@ void Driver::generate(const char *const filenameOut)
     CodeGenerator gen;
     gen.generate(astRoot, filenameOut);
 
-    // If you need further processing, do it here.
 }
 
    void Driver::compile(const char *const filenameIn, const char *const filenameOut)
    {
       parse(filenameIn);
-      debugTreeDump(); // debugging the AST
       analyze();       // run semantic checks
       generate(filenameOut);
-      //debugTreeDump(); // debugging the AST
    }
 
 } // namespace Compiler

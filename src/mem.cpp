@@ -1,5 +1,4 @@
 #include "mem.hpp"
-#include <iostream> // for debug prints
 
 namespace Compiler
 {
@@ -45,8 +44,6 @@ namespace Compiler
         computedAddress_RES_ = nextFreeAddress_++;
         computedAddress_TMP_ = nextFreeAddress_++;
 
-        std::cout << "[MemoryMapper] Computed address (RES) => " << computedAddress_RES_ << "\n";
-        std::cout << "[MemoryMapper] Computed address (TMP) => " << computedAddress_TMP_ << "\n";
         
         T1_ = nextFreeAddress_++;
         T2_ = nextFreeAddress_++;
@@ -58,8 +55,6 @@ namespace Compiler
         T8_ = nextFreeAddress_++;
         T9_ = nextFreeAddress_++;
 
-        std::cout << "[MemoryMapper] Scratch cells => " << T1_
-                  << ", " << T2_ << ", " << T3_ << "\n";
     }
 
     // -------------------------------------------------
@@ -75,8 +70,6 @@ namespace Compiler
         // 2) Reserve one cell for this procedure's return address
         //    => when we call the procedure, we store the caller's IP here
         proc->returnAddrCell = nextFreeAddress_++;
-        std::cout << "[MemoryMapper] Procedure '" << proc->name
-                  << "' => returnAddrCell=" << proc->returnAddrCell << "\n";
 
         // 3) If we have a procSymbol, mark it isProcedure
         if (proc->procSymbol)
@@ -140,8 +133,6 @@ namespace Compiler
         if (sym->isRefParam)
         {
             sym->address = nextFreeAddress_++;
-            std::cout << "[MemoryMapper] RefParam " << sym->name
-                      << " => cell " << sym->address << "\n";
             return;
         }
 
@@ -161,17 +152,11 @@ namespace Compiler
 
             nextFreeAddress_ += (length + 1);
 
-            std::cout << "[MemoryMapper] Array " << sym->name
-                      << ", offsetCell=" << offsetCell
-                      << ", base=" << base
-                      << ", length=" << length << "\n";
             return;
         }
 
         // Otherwise, a normal scalar => 1 cell
         sym->address = nextFreeAddress_++;
-        std::cout << "[MemoryMapper] Scalar " << sym->name
-                  << " => cell " << sym->address << "\n";
     }
 
     // -------------------------------------------------
@@ -233,7 +218,6 @@ namespace Compiler
                     // It's an upward FOR.
                     // Allocate 1 new cell to store the countdown
                     cmd->forCmd->helperCell = nextFreeAddress_++;
-                    std::cout << "[MemoryMapper] FOR-UP helper cell => " << cmd->forCmd->helperCell << "\n";
                 }
 
 

@@ -30,7 +30,7 @@ namespace Compiler
             long long arrayStart = 0;
             long long arrayEnd = 0;
             long long address = 0;
-            long long offsetCell = 0;  // used if isArray==true
+            long long offsetCell = 0; // used if isArray==true
             bool isInitialized = false;
         };
 
@@ -213,7 +213,6 @@ namespace Compiler
             std::shared_ptr<Condition> condition;
             std::vector<std::shared_ptr<Command>> thenCommands;
             std::vector<std::shared_ptr<Command>> elseCommands;
-
         };
 
         struct WhileCmd
@@ -297,19 +296,7 @@ namespace Compiler
             std::shared_ptr<Main> mainPart;
         };
 
-        static std::string indentStr(int indent);
 
-    private:
-        // Private helper methods for DumpAST (implemented in ast.cpp).
-        static void dumpProgramAll(const ProgramAll &prog, int indent);
-        static void dumpProcedure(const Procedure &proc, int indent);
-        static void dumpMain(const Main &m, int indent);
-        static void dumpDeclarations(const Declarations &decls, int indent);
-        static void dumpCommand(const Command &cmd, int indent);
-        static void dumpExpression(const Expression &expr, int indent);
-        static void dumpCondition(const Condition &cond, int indent);
-        static void dumpValue(const Value &val, int indent);
-        static void dumpIdentifier(const Identifier &id, int indent);
     };
 
 } // namespace Compiler

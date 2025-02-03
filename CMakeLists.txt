@@ -23,7 +23,6 @@ ADD_FLEX_BISON_DEPENDENCY(lexer parser)
 # Add the compiler executable target, including source files and generated files.
 add_executable(compiler
     src/main.cpp
-    src/ast.cpp
     src/codegen.cpp
     src/driver.cpp
     src/mem.cpp

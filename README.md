@@ -1,10 +1,11 @@
 # Kompilator
-Autor: Wiktor Stojek
+Autor: Wiktor Stojek<br />
 Projekt kompilatora prostego języka imperatywnego generującego kod dla maszyny wirtualnej, w ramach laboratorium JFTT2024 prowadzonego w semestrze zimowym 2024/2025 przez dr. Maćka Gębalę
 Technologie: Flex, Bison, C++17.
 ## Struktura katalogów
 ```
 Kompilator/
+├── build.sh             # Skrypt budujący
 ├── CMakeLists.txt       # Plik konfiguracyjny CMake
 ├── README.md            # Ten plik
 ├── build/               # Katalog wynikowy kompilacji (tworzony automatycznie)
@@ -13,14 +14,15 @@ Kompilator/
 │   ├── codegen.hpp
 │   ├── driver.hpp
 │   ├── mem.hpp
-│   ├── sema.hpp
-│   └── scanner.hpp
+│   ├── safeops.hpp
+│   ├── scanner.hpp
+│   └── sema.hpp
 ├── grammar/            # Definicje gramatyk dla Flex i Bison
 │   ├── lexer.l
 │   └── parser.yy
 └── src/                 # Pliki źródłowe
     ├── main.cpp
-    ├── ast.cpp
+    ├── safeops.cpp
     ├── codegen.cpp
     ├── driver.cpp
     ├── mem.cpp
@@ -99,7 +101,7 @@ Czyszczenie można przeprowadzić na dwa sposoby:
   ```
 
 - **Czyszczenie całkowite (Distclean):**  
-  Usuwa cały katalog build, umożliwiając rozpoczęcie budowy od początku:
+  Usuwa cały katalog build:
 
   ```bash
   ./build.sh distclean
@@ -107,7 +109,7 @@ Czyszczenie można przeprowadzić na dwa sposoby:
 
 ## Uruchamianie kompilatora
 
-Po pomyślnym zbudowaniu projektu, uruchomić kompilator z katalogu build:
+Po zbudowaniu projektu, uruchomić kompilator z katalogu build:
 
 ```bash
 ./compiler \<plik wejściowy\> \<plik wyjściowy\>
@@ -115,4 +117,4 @@ Po pomyślnym zbudowaniu projektu, uruchomić kompilator z katalogu build:
 
 ## Licencja
 
-Projekt przeznaczony jest wyłącznie do celów akademickich. Zawiera on elementy wygenerowane przez Bison, który jest dystrybuowany na licencji GNU General Public License (GPL) z wyjątkowym pozwoleniem na użycie szkieletu parsera w oprogramowaniu nieobjętym GPL, oraz elementy wygenerowane przez Flex, który jest dystrybuowany na licencji BSD (styl BSD). Źródła tego projektu są dostępne na zasadach licencyjnych przeznaczonych do użytku akademickiego.
+Projekt przeznaczony jest wyłącznie do celów akademickich. Zawiera elementy wygenerowane przez Bison, który jest dystrybuowany na licencji GNU General Public License (GPL) z wyjątkowym pozwoleniem na użycie szkieletu parsera w oprogramowaniu nieobjętym GPL, oraz elementy wygenerowane przez Flex, który jest dystrybuowany na licencji BSD (styl BSD). Źródła tego projektu są dostępne na zasadach licencyjnych przeznaczonych do użytku akademickiego.

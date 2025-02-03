@@ -34,11 +34,6 @@ namespace Compiler
       void analyze();
       void generate(const char *const filenameOut);
 
-      /*
-         Remove this function after the compiler is complete.
-         For now, it can help debug the AST.
-      */
-      void debugTreeDump();
 
       Compiler::Scanner *scanner = nullptr;
       Compiler::Parser  *parser  = nullptr;
