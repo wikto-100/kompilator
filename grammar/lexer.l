@@ -1,20 +1,18 @@
 %{
-/* C++ string header, for string ops below */
+/* Autor: Wiktor Stojek, nr. indeksu 272383 */
 #include <string>
 
-/* Implementation of yyFlexScanner */ 
+/* Implementacja yyFlexScanner */ 
 #include "scanner.hpp"
 #undef  YY_DECL
 #define YY_DECL int Compiler::Scanner::yylex( Compiler::Parser::semantic_type * const lval, Compiler::Parser::location_type *loc )
 
-/* typedef to make the returns for the tokens shorter */
 using token = Compiler::Parser::token;
 
 
-/* msvc2010 requires that we exclude this header file. */
 #define YY_NO_UNISTD_H
 
-/* update location on matching */
+/* Aktualizacja lokacji */
 #define YY_USER_ACTION loc->step(); loc->columns(yyleng);
 
 %}
@@ -26,7 +24,7 @@ using token = Compiler::Parser::token;
 %option c++
 
 %%
-%{          /** Code executed at the beginning of yylex **/
+%{          /** Kod wykonywany na początku lexowania **/
             yylval = lval;
 %}
 
@@ -87,10 +85,10 @@ using token = Compiler::Parser::token;
 
 
 .           {
-                  std::cerr << "Unrecognized character \""
-                                          << yytext << "\" at line "
+                  std::cerr << "Nierozpoznany znak \""
+                                          << yytext << "\" linia: "
                                           << yylineno << std::endl;
-                                exit(1);
+                  exit(1);
             }
 %%
 

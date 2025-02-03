@@ -1,6 +1,8 @@
 #ifndef __SCANNER_HPP__
 #define __SCANNER_HPP__ 1
-
+/**
+ * \author: Wiktor Stojek nr. indeksu 272383
+ */
 #if !defined(yyFlexLexerOnce)
 #include <FlexLexer.h>
 #endif
@@ -10,29 +12,24 @@
 
 namespace Compiler
 {
-
+   /**
+    * \brief Klasa skanera dla języka maszyny wirtualnej. (Integracja C++/Flex/Bison)
+    */
    class Scanner : public yyFlexLexer
    {
    public:
-      Scanner(std::istream *in) : yyFlexLexer(in) {
-                                     };
-      virtual ~Scanner() {
+      Scanner(std::istream *in) : yyFlexLexer(in) {};
+      virtual ~Scanner() {};
 
-      };
-
-      // get rid of override virtual function warning
       using FlexLexer::yylex;
 
+      
       virtual int yylex(Compiler::Parser::semantic_type *const lval,
                         Compiler::Parser::location_type *location);
-      // YY_DECL defined in lexer.l
-      // Method body created by flex in lexer.yy.cc
-
    private:
-      /* yyval ptr */
       Compiler::Parser::semantic_type *yylval = nullptr;
    };
 
-} /* end namespace Compiler */
+} // namespace Compiler
 
 #endif /* END __SCANNER_HPP__ */

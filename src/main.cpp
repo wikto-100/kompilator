@@ -1,3 +1,6 @@
+/**
+ * \author: Wiktor Stojek nr. indeksu 272383
+ */
 #include <iostream>
 #include <cstdlib>
 
@@ -5,10 +8,10 @@
 
 int main(int argc, char* argv[])
 {
-    // Verify that exactly two command line arguments (excluding the program name) are provided.
+    // Sprawdzenie liczby argumentów
     if (argc != 3)
     {
-        std::cerr << "Usage: " << argv[0] << " <source_file> <output_file>" << std::endl;
+        std::cerr << "Sposób użycia: " << argv[0] << " <plik wejściowy> <plik wyjściowy>" << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -16,12 +19,12 @@ int main(int argc, char* argv[])
 
     try
     {
-        // Compile the source file to the specified output file.
+        // Kompilacja pliku wejściowego
         driver.compile(argv[1], argv[2]);
     }
     catch (const std::exception& e)
     {
-        std::cerr << "Compilation failed: " << e.what() << std::endl;
+        std::cerr << "Kompilacja nieudana: " << e.what() << std::endl;
         return EXIT_FAILURE;
     }
 

@@ -1,3 +1,6 @@
+/**
+ * \author: Wiktor Stojek nr. indeksu 272383
+ */
 #include <cctype>
 #include <fstream>
 #include <cassert>
@@ -9,7 +12,6 @@
 #include "codegen.hpp"
 namespace Compiler
 {
-
    Driver::~Driver()
    {
       delete scanner;
@@ -24,7 +26,7 @@ namespace Compiler
       std::ifstream in_file(filename);
       if (!in_file.good())
       {
-         std::cerr << "Could not open file \"" << filename << "\"\n";
+         std::cerr << "Nie można otworzyć pliku \"" << filename << "\"\n";
          exit(EXIT_FAILURE);
       }
       parse_helper(in_file);
@@ -41,7 +43,7 @@ namespace Compiler
       }
       catch (std::bad_alloc &ba)
       {
-         std::cerr << "Failed to allocate scanner: (" << ba.what() << "), exiting!!\n";
+         std::cerr << "Błąd alokacji skanera: (" << ba.what() << ")\n";
          exit(EXIT_FAILURE);
       }
 
@@ -55,13 +57,13 @@ namespace Compiler
       }
       catch (std::bad_alloc &ba)
       {
-         std::cerr << "Failed to allocate parser: (" << ba.what() << "), exiting!!\n";
+         std::cerr << "Błąd alokacji parsera: (" << ba.what() << ")\n";
          exit(EXIT_FAILURE);
       }
       const int accept(0);
       if (parser->parse() != accept)
       {
-         std::cerr << "Parse failed!!\n";
+         std::cerr << "Parsowanie: BŁĄD.\n";
       }
    }
 
@@ -71,36 +73,32 @@ namespace Compiler
    {
       if (!astRoot)
       {
-         std::cerr << "No AST to analyze.\n";
+         std::cerr << "Brak AST do analizy semantycznej.\n";
          return;
       }
-      // Perform semantic analysis using the stubbed SemanticChecker
       SemanticChecker checker;
 
-      bool ok = checker.checkProgram(astRoot); // run checks
+      bool ok = checker.checkProgram(astRoot);
 
       if (!ok)
       {
-         // Print errors and terminate or handle as you wish
          const auto &errs = checker.errors();
          for (auto &msg : errs)
          {
-            std::cerr << "SEMANTIC ERROR: " << msg << "\n";
+            std::cerr << "BŁĄD SEMANTYCZNY: " << msg << "\n";
          }
-         // If desired, you could do something else here
-         // (e.g., throw std::runtime_error or return a status)
+         std::cerr << "Analiza semantyczna: BŁĄD.\n";
          exit(EXIT_FAILURE);
       }
 
-      // If we reach here, no semantic errors were found
-      std::cout << "Semantic analysis passed.\n";
+      std::cout << "Analiza semantyczna: OK.\n";
    }
 
 void Driver::generate(const char *const filenameOut)
 {
-    // We assume astRoot was set by the parse step
+    // AST powinno być już zbudowane i sprawdzone
     if (!astRoot) {
-        std::cerr << "No AST to generate code from.\n";
+        std::cerr << "Brak AST do generowania kodu.\n";
         return;
     }
 
@@ -112,7 +110,7 @@ void Driver::generate(const char *const filenameOut)
    void Driver::compile(const char *const filenameIn, const char *const filenameOut)
    {
       parse(filenameIn);
-      analyze();       // run semantic checks
+      analyze();
       generate(filenameOut);
    }
 

@@ -1,5 +1,5 @@
 # Kompilator
-Autor: Wiktor Stojek<br />
+Autor: Wiktor Stojek nr. indeksu 272383<br />
 Projekt kompilatora prostego języka imperatywnego generującego kod dla maszyny wirtualnej, w ramach laboratorium JFTT2024 prowadzonego w semestrze zimowym 2024/2025 przez dr. Maćka Gębalę
 Technologie: Flex, Bison, C++17.
 ## Struktura katalogów

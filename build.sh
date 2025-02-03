@@ -1,20 +1,21 @@
 #!/bin/bash
-# build.sh - Automates building and cleaning for the Kompilator project.
+# Autor: Wiktor Stojek, nr indeksu: 272383
+# build.sh - Automatyzuje budowanie i czyszczenie projektu Kompilator.
 #
-# Usage:
-#   ./build.sh         : Configures and builds the project.
-#   ./build.sh clean   : Performs a partial clean (invokes 'make clean' in the build directory).
-#   ./build.sh distclean : Removes the entire build directory.
+# Użycie:
+#   ./build.sh         : Konfiguruje i buduje projekt.
+#   ./build.sh clean   : Wykonuje częściowe czyszczenie (wywołuje 'make clean' w katalogu build).
+#   ./build.sh distclean : Usuwa cały katalog build.
 
-set -e  # Exit immediately if a command fails.
+set -e  # Zakończ natychmiast, jeśli polecenie nie powiedzie się.
 
 BUILD_DIR="build"
 
 usage() {
-    echo "Usage: $0 [clean|distclean]"
-    echo "  clean     : Run 'make clean' in the build directory (partial clean)."
-    echo "  distclean : Remove the entire build directory (complete clean)."
-    echo "  No arguments: Build the project."
+    echo "Użycie: $0 [clean|distclean]"
+    echo "  clean     : Uruchom 'make clean' w katalogu build (częściowe czyszczenie)."
+    echo "  distclean : Usuń cały katalog build (pełne czyszczenie)."
+    echo "  Brak argumentów: Zbuduj projekt."
     exit 1
 }
 
@@ -26,19 +27,19 @@ if [ "$#" -eq 1 ]; then
     case "$1" in
         clean)
             if [ -d "$BUILD_DIR" ]; then
-                echo "Performing partial clean (make clean) in ${BUILD_DIR}..."
+                echo "Wykonywanie częściowego czyszczenia (make clean) w ${BUILD_DIR}..."
                 cd "$BUILD_DIR"
                 make clean
-                echo "Partial clean completed."
+                echo "Częściowe czyszczenie zakończone."
             else
-                echo "Build directory does not exist. Nothing to clean."
+                echo "Katalog build nie istnieje. Nie ma nic do wyczyszczenia."
             fi
             exit 0
             ;;
         distclean)
-            echo "Performing complete clean (removing the build directory)..."
+            echo "Wykonywanie pełnego czyszczenia (usuwanie katalogu build)..."
             rm -rf "$BUILD_DIR"
-            echo "Complete clean completed."
+            echo "Pełne czyszczenie zakończone."
             exit 0
             ;;
         *)
@@ -47,17 +48,17 @@ if [ "$#" -eq 1 ]; then
     esac
 fi
 
-# Default behavior: build the project.
+# Domyślne zachowanie: zbuduj projekt.
 if [ ! -d "$BUILD_DIR" ]; then
-    echo "Creating build directory: $BUILD_DIR"
+    echo "Tworzenie katalogu build: $BUILD_DIR"
     mkdir -p "$BUILD_DIR"
 fi
 
 cd "$BUILD_DIR"
-echo "Configuring the project with CMake..."
+echo "Konfigurowanie projektu za pomocą CMake..."
 cmake ..
 
-echo "Building the project..."
+echo "Budowanie projektu..."
 make
 
-echo "Build completed successfully. You can now run the 'compiler' executable from the '${BUILD_DIR}' directory."
+echo "Budowanie zakończone pomyślnie. Można teraz uruchomić plik wykonywalny 'kompilator' z katalogu '${BUILD_DIR}'."

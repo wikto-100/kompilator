@@ -1,3 +1,6 @@
+/**
+ * \author: Wiktor Stojek nr. indeksu 272383
+ */
 #pragma once
 
 #include "ast.hpp"
@@ -13,7 +16,7 @@ namespace Compiler
 {
 
     // ===================================================
-    // Virtual Machine Instruction Set
+    // Instrukcje Maszyny Wirtualnej
     // ===================================================
     enum class VMInstruction
     {
@@ -38,33 +41,33 @@ namespace Compiler
     };
 
     // ===================================================
-    // Operand Enumeration for Binary Operations
+    // Typy Operandów
     // ===================================================
     enum class OperandEnum
     {
-        NUM_NUM,        // constant - constant
-        NUM_SCALAR,     // constant - scalar
-        SCALAR_NUM,     // scalar - constant
-        SCALAR_SCALAR,  // scalar - scalar
-        ARR_NUM,        // array - constant
-        NUM_ARR,        // constant - array
-        ARR_SCALAR,     // array - scalar
-        SCALAR_ARR,     // scalar - array
-        ARR_ARR,        // array - array
-        NONE            // not applicable / unspecified
+        NUM_NUM,       // stała - stała
+        NUM_SCALAR,    // stała - zmienna
+        SCALAR_NUM,    // zmienna - stała
+        SCALAR_SCALAR, // zmienna - zmienna
+        ARR_NUM,       // tablica - stała
+        NUM_ARR,       // stała - tablica
+        ARR_SCALAR,    // tablica - zmienna
+        SCALAR_ARR,    // zmienna - tablica
+        ARR_ARR,       // tablica - tablica
+        NONE           // brak (??)
     };
 
     // ===================================================
-    // Code Generation Instruction Structure
+    // Struktura generowanych instrukcji
     // ===================================================
     struct CGInstruction
     {
-        VMInstruction opcode;
-        std::optional<long long> operand;
+        VMInstruction opcode;             // Kod operacji
+        std::optional<long long> operand; // argument operacji (opcjonalny)
     };
 
     // ===================================================
-    // CodeGenerator Class
+    // Klasa Generatora Kodu
     // ===================================================
     class CodeGenerator
     {
@@ -73,49 +76,53 @@ namespace Compiler
         ~CodeGenerator() = default;
 
         // ------------------------------------
-        // Top-level Code Generation Interface
+        // Interfejs publiczny
         // ------------------------------------
-        // Generates virtual machine code from the AST and writes the output to a file.
+        // Generuje kod dla całego programu
         void generate(const std::shared_ptr<AST::ProgramAll> &astRoot,
                       const std::string &outputFilename);
 
     private:
         // ===================================================
-        // Optimization Functions
+        // Funkcje optymalizujące kod
         // ===================================================
         void truncNoPUT(std::vector<CGInstruction> &m_code);
+
         // ===================================================
-        // Emitter and Backpatcher Functions
+        // Funkcje emitujące instrukcje
         // ===================================================
-        // Emit a VM instruction with no operand.
+
+        // Zapisuje instrukcję VM bez argumentu
         long long emit(VMInstruction op);
-        // Emit a VM instruction with an operand.
+        // Zapisuje instrukcję VM z argumentem
         long long emit(VMInstruction op, long long operand);
-        // Backpatch the operand of an instruction at a given index.
+        // Zmienia argument instrukcji o indeksie instrIndex na newOperand
         void backpatchOperand(long long instrIndex, long long newOperand);
-        // Patch the jump instruction at jumpInstrIdx so that its offset points to the current code index.
+        // Zmienia argument skoku do instrukcji o indeksie jumpInstrIdx na aktualny indeks
         void patchJumpToCurrent(long long jumpInstrIdx);
-        // Write the generated code to a file.
+
+        // ===================================================
+        // Zapisuje kod do pliku
         void writeCodeToFile(const std::string &filename);
 
         // ===================================================
-        // AST Traversal Functions
+        // Funkcje przejścia po AST
         // ===================================================
-        // Generate code for the entire program.
+        // Generuje kod dla całego programu
         void genProgramAll(const AST::ProgramAll &prog);
-        // Generate code for a procedure.
+        // Generuje kod dla pojedynczej procedury
         void genProcedure(const AST::Procedure &proc);
-        // Generate code for the main program.
+        // Generuje kod dla main
         void genMain(const AST::Main &m);
-        // Generate code for variable declarations.
+        // Generuje deklaracje
         void genDeclarations(const AST::Declarations &decls);
-        // Generate code for a list of commands.
+        // Generuje pojedynczą deklarację
         void genCommands(const std::vector<std::shared_ptr<AST::Command>> &cmds);
-        // Generate code for a single command.
+        // Generuje pojedyncze polecenie
         void genCommand(const AST::Command &cmd);
 
         // ===================================================
-        // Command-Specific Code Generation Functions
+        // Generowanie kodu dla poszczególnych instrukcji
         // ===================================================
         void genAssign(const AST::AssignCmd &assign);
         void genIf(const AST::IfCmd &ifCmd);
@@ -128,45 +135,47 @@ namespace Compiler
         void genIO(const AST::IOCommand &ioCmd, AST::CommandType cmdType);
 
         // ===================================================
-        // Expression and Condition Generation Functions
+        // Generowanie kodu dla wyrażeń i warunków
         // ===================================================
         void genExpression(const std::shared_ptr<AST::Expression> &expr);
         void genCondition(const std::shared_ptr<AST::Condition> &cond, VMInstruction &jumpType);
 
         // ===================================================
-        // Medium-Granularity Helper Functions
+        // Funkcje generujące binarne operacje arytmetyczne
         // ===================================================
-        // Determine operand types for binary operations.
+        // Wylicza typ argumentów operacji
         void enumerateOperands(const AST::Value &lhs, const AST::Value &rhs, OperandEnum &opType);
-        // Binary arithmetic operations.
         void genPlus(const AST::Value &lhs, const AST::Value &rhs, const OperandEnum &opType);
         void genMinus(const AST::Value &lhs, const AST::Value &rhs, const OperandEnum &opType);
         void genStar(const AST::Value &lhs, const AST::Value &rhs, const OperandEnum &opType);
         void genSlash(const AST::Value &lhs, const AST::Value &rhs, const OperandEnum &opType);
-        
-        long long python_floor_div(long long a, long long b, bool &isSafe);
-        
         void genPercent(const AST::Value &lhs, const AST::Value &rhs, const OperandEnum &opType);
+        // Funkcje pomocnicze dla operacji arytmetycznych
+        long long python_floor_div(long long a, long long b, bool &isSafe);
         long long python_mod(long long a, long long b, bool &isSafe);
-        // I/O Helpers: handle read and write operations.
+
+        // ===================================================
+        // Funckje pomocnicze dla operacji wejścia/wyjścia
         void handleReadTarget(const AST::Identifier &id);
         void handleWriteTarget(const AST::Identifier &id);
 
-        // Array addressing helpers.
+        // ===================================================
+        // Funkcja obliczająca adres elementu tablicy -> p[computedAddr]
         void computeArrayElementAddr(const AST::Identifier &arrId, long long computedAddr);
+        // Funkcja ładująca element tablicy do akumulatora p[0]
         void loadArrayElement(const AST::Identifier &arrId);
 
-        // Scalar memory operations.
+        // Funkcje pomocnicze dla operacji na zmiennych
         void loadScalar(const AST::Symbol &sym);
         void storeScalar(const AST::Symbol &sym);
         void subScalar(const AST::Symbol &sym);
         void addScalar(const AST::Symbol &sym);
 
     private:
-        // Memory mapper for assigning addresses to variables and arrays.
+        // Instancja klasy mapującej pamięć maszyny wirtualnej do zmiennych
         MemoryMapper mapper;
-        // Container for generated code instructions.
+        // Wektor wygenerowanych instrukcji
         std::vector<CGInstruction> m_code;
     };
 
-} // end namespace Compiler
+} // namespace Compiler

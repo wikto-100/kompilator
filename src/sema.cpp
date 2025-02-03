@@ -1,3 +1,6 @@
+/**
+ * \author: Wiktor Stojek nr. indeksu 272383
+ */
 #include "sema.hpp"
 #include <sstream>
 #include <algorithm>
@@ -9,14 +12,12 @@ namespace Compiler
     {
         if (!root)
         {
-            reportError("No AST to check.");
+            reportError("Brak AST do analizy semantycznej.");
             return false;
         }
 
-        // Pass1: Build & link
         pass1ProgramAll(root);
 
-        // Pass2: Usage checks
         pass2ProgramAll(root);
 
         return errors_.empty();
@@ -27,32 +28,27 @@ namespace Compiler
         std::ostringstream oss;
         if (line > 0 || col > 0)
         {
-            oss << "[Line " << line << ", Col " << col << "] ";
+            oss << "[Linia " << line << ", Kolumna " << col << "] ";
         }
         oss << msg;
         errors_.push_back(oss.str());
     }
 
-    /* ------------------------------------------------------------------
-       PASS 1: Build & Link
-    ------------------------------------------------------------------ */
-
     void SemanticChecker::pass1ProgramAll(const std::shared_ptr<AST::ProgramAll> &root)
     {
         int currentIndex = 0;
-        // 1) Procedures
+
         for (auto &procNode : root->procedures)
         {
             const std::string &pname = procNode->name;
             if (procTable_.find(pname) != procTable_.end())
             {
-                reportError("Duplicate procedure '" + pname + "' declared.");
+                reportError("Podwójna deklaracja procedury '" + pname + "'.");
             }
             auto record = std::make_shared<ProcedureRecord>();
             record->procNode = procNode;
             record->index = currentIndex++;
 
-            // If the procedure node doesn't have a symbol
             if (!procNode->procSymbol)
             {
                 auto sym = std::make_shared<AST::Symbol>();
@@ -65,13 +61,11 @@ namespace Compiler
             procedureOrder_.push_back(record);
         }
 
-        // 2) Each procedure
         for (auto &r : procedureOrder_)
         {
             pass1Procedure(r);
         }
 
-        // 3) Main
         mainIndex_ = currentIndex;
         if (root->mainPart)
         {
@@ -84,7 +78,6 @@ namespace Compiler
         auto procNode = record->procNode;
         auto &localSyms = record->localSymbols;
 
-        // 1) Parameters
         for (auto &argPair : procNode->arguments)
         {
             bool isArrayParam = argPair.first;
@@ -94,21 +87,19 @@ namespace Compiler
             auto sym = createSymbol(paramName, localSyms, &duplicate);
             if (duplicate)
             {
-                continue; // error reported
+                continue;
             }
             sym->isArray = isArrayParam;
-            sym->isInitialized = true; // parameters are "initialized"
-            sym->isRefParam = true;    // parameters are passed by reference
+            sym->isInitialized = true;
+            sym->isRefParam = true;
             procNode->paramSymbols.push_back(sym);
         }
 
-        // 2) Local declarations
         for (auto &declsPtr : procNode->localDeclarations)
         {
             pass1Declarations(declsPtr, localSyms);
         }
 
-        // 3) Commands (includes linking calls, references, etc.)
         pass1Commands(procNode->commands, localSyms);
     }
 
@@ -133,24 +124,20 @@ namespace Compiler
             auto sym = createSymbol(item.name, symList, &duplicate);
             if (duplicate)
             {
-                // We already reported an error for the duplicate,
-                // so we skip any further initialization for this item.
+
                 continue;
             }
 
-            // Attach the newly created symbol to the DeclItem
             item.symbol = sym;
 
-            // Copy over fields
             sym->isArray = item.isArray;
             sym->arrayStart = item.rangeStart;
             sym->arrayEnd = item.rangeEnd;
-            sym->isInitialized = sym->isArray; // arrays start as "initialized"
+            sym->isInitialized = sym->isArray;
 
-            // Check bounds
             if (sym->isArray && sym->arrayStart > sym->arrayEnd)
             {
-                reportError("Invalid array bounds for '" + item.name + "' (start > end).");
+                reportError("Nieprawidłowy zakres tablicy '" + item.name + "' (start > end).");
             }
         }
     }
@@ -176,7 +163,7 @@ namespace Compiler
         case CT::ASSIGN:
             if (cmd->assignCmd)
             {
-                // Link LHS
+
                 pass1Identifier(cmd->assignCmd->lhs, symList);
                 pass1Expression(cmd->assignCmd->rhs, symList);
             }
@@ -209,14 +196,14 @@ namespace Compiler
             if (cmd->forCmd)
             {
                 cmd->forCmd->downTo = (cmd->type == CT::FOR_DOWNTO);
-                // Check if loop var conflicts
+
                 auto existingSym = findSymbol(cmd->forCmd->loopVar, symList);
                 if (existingSym)
                 {
-                    reportError("Loop iterator '" + cmd->forCmd->loopVar +
-                                "' conflicts with existing declaration.");
+                    reportError("Iterator pętli '" + cmd->forCmd->loopVar +
+                                "' w konflikcie z istniejącą zmienną.");
                 }
-                // Create loop var symbol
+
                 auto loopSym = createSymbol(cmd->forCmd->loopVar, symList);
                 loopSym->isIterator = true;
                 loopSym->isInitialized = true;
@@ -226,7 +213,6 @@ namespace Compiler
                 pass1Value(cmd->forCmd->endValue, symList);
                 pass1Commands(cmd->forCmd->body, symList);
 
-                // Remove if language says scope ends
                 auto it = std::remove(symList.begin(), symList.end(), loopSym);
                 if (it != symList.end())
                 {
@@ -255,11 +241,10 @@ namespace Compiler
         }
     }
 
-    // NEW helper: Link procedure call arguments to symbols
     void SemanticChecker::pass1ProcCallCmd(AST::ProcCallCmd &callCmd,
                                            std::vector<std::shared_ptr<AST::Symbol>> &symList)
     {
-        // 1) Link to procedure if it exists
+
         auto rec = findProcedureRecord(callCmd.name);
         if (rec)
         {
@@ -267,10 +252,9 @@ namespace Compiler
         }
         else
         {
-            reportError("Call to undeclared procedure '" + callCmd.name + "'");
+            reportError("Wywołanie nieistniejącej procedury '" + callCmd.name + "'");
         }
 
-        // 2) For each argument name => find the symbol in this caller scope
         callCmd.argSymbols.clear();
         callCmd.argSymbols.reserve(callCmd.args.size());
 
@@ -279,8 +263,8 @@ namespace Compiler
             auto sym = findSymbol(argName, symList);
             if (!sym)
             {
-                reportError("Use of undeclared variable '" + argName + "' in procedure call");
-                // push back a null so indices align
+                reportError("Użycie niezadeklarowanej zmiennej '" + argName + "' w wywołaniu procedury.");
+
                 callCmd.argSymbols.push_back(nullptr);
             }
             else
@@ -322,7 +306,6 @@ namespace Compiler
         }
     }
 
-    // link a single Identifier
     void SemanticChecker::pass1Identifier(AST::Identifier &id,
                                           std::vector<std::shared_ptr<AST::Symbol>> &symList)
     {
@@ -342,10 +325,6 @@ namespace Compiler
         }
     }
 
-    /* ------------------------------------------------------------------
-       Symbol creation & lookups
-    ------------------------------------------------------------------ */
-
     std::shared_ptr<AST::Symbol>
     SemanticChecker::createSymbol(const std::string &name,
                                   std::vector<std::shared_ptr<AST::Symbol>> &symList,
@@ -354,7 +333,7 @@ namespace Compiler
         auto existing = findSymbol(name, symList);
         if (existing)
         {
-            reportError("Duplicate declaration of '" + name + "'");
+            reportError("Podwójna deklaracja '" + name + "'");
             if (duplicateOut)
                 *duplicateOut = true;
             return existing;
@@ -392,22 +371,16 @@ namespace Compiler
         return it->second;
     }
 
-    /* ------------------------------------------------------------------
-       PASS 2
-    ------------------------------------------------------------------ */
-
     void SemanticChecker::pass2ProgramAll(const std::shared_ptr<AST::ProgramAll> &root)
     {
         if (!root)
             return;
 
-        // For each procedure in declared order
         for (auto &record : procedureOrder_)
         {
             pass2Procedure(record);
         }
 
-        // Then main
         if (root->mainPart)
         {
             pass2Main(root->mainPart);
@@ -496,9 +469,6 @@ namespace Compiler
         }
     }
 
-    /* ------------------------------------------------------------------
-       Helper for pass2 local symbol lookup
-    ------------------------------------------------------------------ */
     std::shared_ptr<AST::Symbol>
     SemanticChecker::findLocalSymbol(const std::string &name,
                                      std::vector<std::shared_ptr<AST::Symbol>> &symList)
@@ -512,10 +482,6 @@ namespace Compiler
         }
         return nullptr;
     }
-
-    /* ------------------------------------------------------------------
-       PASS2: Expressions / Conditions
-    ------------------------------------------------------------------ */
 
     void SemanticChecker::pass2Expression(const std::shared_ptr<AST::Expression> &expr,
                                           std::vector<std::shared_ptr<AST::Symbol>> &symList,
@@ -548,23 +514,18 @@ namespace Compiler
             return;
         if (val->isIdentifier)
         {
-            pass2Identifier(val->identifier, /*writing=*/false, symList, currentProcIndex);
+            pass2Identifier(val->identifier, false, symList, currentProcIndex);
         }
     }
-
-    /* ------------------------------------------------------------------
-       PASS2: Command-specific checks
-    ------------------------------------------------------------------ */
 
     void SemanticChecker::pass2AssignCmd(const AST::AssignCmd &assign,
                                          std::vector<std::shared_ptr<AST::Symbol>> &symList,
                                          int currentProcIndex)
     {
-        // LHS => writing
-        pass2Identifier(const_cast<AST::Identifier &>(assign.lhs), /*writing=*/true,
+
+        pass2Identifier(const_cast<AST::Identifier &>(assign.lhs), true,
                         symList, currentProcIndex);
 
-        // RHS
         pass2Expression(assign.rhs, symList, currentProcIndex);
     }
 
@@ -597,26 +558,23 @@ namespace Compiler
                                       std::vector<std::shared_ptr<AST::Symbol>> &symList,
                                       int currentProcIndex)
     {
-        // 1) Push the loop variable back into the scope
+
         auto loopSym = forCmd.loopVarSymbol;
         if (!loopSym)
         {
-            reportError("Missing loop variable symbol for '" + forCmd.loopVar + "'");
+            reportError("Brak symbolu iteratora '" + forCmd.loopVar + "'");
         }
         else
         {
-            // Insert at the end of the vector to simulate scope
+
             symList.push_back(loopSym);
         }
 
-        // 2) Check the start/end expressions
         pass2Value(forCmd.startValue, symList, currentProcIndex);
         pass2Value(forCmd.endValue, symList, currentProcIndex);
 
-        // 3) Analyze the body
         pass2Commands(forCmd.body, symList, currentProcIndex);
 
-        // 4) Pop the loop variable from scope
         if (loopSym)
         {
             auto it = std::remove(symList.begin(), symList.end(), loopSym);
@@ -630,58 +588,56 @@ namespace Compiler
         auto calleeNode = procCall.callee;
         if (!calleeNode)
         {
-            reportError("Call to undeclared procedure '" + procCall.name + "'");
+            reportError("Wywołanie niezadeklarowanej procedury '" + procCall.name + "'");
             return;
         }
-        // Disallow forward/recursive calls
+
         auto it = procTable_.find(calleeNode->name);
         if (it == procTable_.end())
         {
-            reportError("Internal error: no record found for procedure '" + calleeNode->name + "'");
+            reportError("BŁĄD WEWNĘTRZNY: brak procedury '" + calleeNode->name + "'");
             return;
         }
         auto calleeRec = it->second;
         int calleeIndex = calleeRec->index;
         if (calleeIndex >= callerProcIndex)
         {
-            reportError("Call to procedure '" + calleeNode->name + "' is forward or recursive, not allowed.");
+            reportError("Wywołanie procedury '" + calleeNode->name + "' w przód lub rekurencyjnie.");
         }
 
-        // Compare argument counts
         auto &calleeArgs = calleeNode->arguments;
         auto &callArgs = procCall.args;
-        auto &callArgSymbols = procCall.argSymbols; // Now we can read from here
+        auto &callArgSymbols = procCall.argSymbols;
         if (callArgs.size() != calleeArgs.size())
         {
-            reportError("Call to procedure '" + calleeNode->name +
-                        "' has wrong number of arguments (expected " +
-                        std::to_string(calleeArgs.size()) + ", got " +
+            reportError("Wywołanie procedury '" + calleeNode->name +
+                        "' ma nieprawidłową liczbę argumentów (spodziewano " +
+                        std::to_string(calleeArgs.size()) + ", otrzymano " +
                         std::to_string(callArgs.size()) + ")");
             return;
         }
 
-        // Check array/scalar match
         for (size_t i = 0; i < callArgs.size(); ++i)
         {
             bool paramIsArray = calleeArgs[i].first;
             const std::string &argName = callArgs[i];
-            auto sym = callArgSymbols[i]; // we set this in pass1ProcCallCmd
+            auto sym = callArgSymbols[i];
 
             if (!sym)
             {
-                // We previously reported error for this argument
+
                 continue;
             }
 
             if (sym->isArray != paramIsArray)
             {
-                std::string expected = paramIsArray ? "array" : "scalar";
-                std::string actual = sym->isArray ? "array" : "scalar";
-                reportError("Argument '" + argName + "' type mismatch: expected " +
-                            expected + ", got " + actual);
+                std::string expected = paramIsArray ? "tablicą" : "skalarem";
+                std::string actual = sym->isArray ? "tablicą" : "skalarem";
+                reportError("Argument '" + argName + "' powinien być " +
+                            expected + ", jest " + actual);
             }
-            // Mark as used => if the language means read usage
-            sym->isInitialized = true; 
+
+            sym->isInitialized = true;
         }
     }
 
@@ -695,22 +651,18 @@ namespace Compiler
             if (ioCmd.readTarget.has_value())
             {
                 auto &id = const_cast<AST::Identifier &>(ioCmd.readTarget.value());
-                pass2Identifier(id, /*writing=*/true, symList, currentProcIndex);
+                pass2Identifier(id, true, symList, currentProcIndex);
             }
         }
         else
         {
-            // WRITE
+
             if (ioCmd.writeValue.has_value())
             {
                 pass2Value(ioCmd.writeValue.value(), symList, currentProcIndex);
             }
         }
     }
-
-    /* ------------------------------------------------------------------
-       PASS2: Identifier check
-    ------------------------------------------------------------------ */
 
     void SemanticChecker::pass2Identifier(AST::Identifier &id,
                                           bool writing,
@@ -720,7 +672,7 @@ namespace Compiler
         auto sym = id.symbol;
         if (!sym)
         {
-            reportError("Undeclared variable '" + id.name + "'", id.line, id.column);
+            reportError("Niezadeklarowana zmienna '" + id.name + "'", id.line, id.column);
             return;
         }
 
@@ -728,67 +680,64 @@ namespace Compiler
         {
             if (id.idxType == AST::IdentifierIndexType::NONE)
             {
-                reportError("Array '" + id.name + "' used as scalar", id.line, id.column);
+                reportError("Tablica '" + id.name + "' użyta jako skalar", id.line, id.column);
             }
             else if (id.idxType == AST::IdentifierIndexType::NUMERIC && !sym->isRefParam)
             {
                 long long i = id.indexNumber;
                 if (i < sym->arrayStart || i > sym->arrayEnd)
                 {
-                    reportError("Array index out of bounds for '" + id.name + "'",
+                    reportError("Indeks '" + id.name + "' tablicy poza zakresem",
                                 id.line, id.column);
                 }
             }
             else if (id.idxType == AST::IdentifierIndexType::VARIABLE)
             {
-                // Look up the subscript variable
-                auto subSym = id.indexVarSymbol; 
+
+                auto subSym = id.indexVarSymbol;
                 if (!subSym)
                 {
-                    reportError("Array index variable '" + id.indexVar + "' not declared",
+                    reportError("Zmienna indeksu tablicy '" + id.indexVar + "' niezadeklarowana",
                                 id.line, id.column);
                 }
                 else
                 {
-                    // A subscript is effectively read usage => writing=false
+
                     AST::Identifier subId;
                     subId.name = id.indexVar;
                     subId.line = id.line;
                     subId.column = id.column;
                     subId.symbol = subSym;
 
-                    pass2Identifier(subId, /*writing=*/false, symList, currentProcIndex);
+                    pass2Identifier(subId, false, symList, currentProcIndex);
                 }
             }
         }
         else
         {
-            // Scalar => must not have an index
+
             if (id.idxType != AST::IdentifierIndexType::NONE)
             {
-                reportError("Scalar '" + id.name + "' used as array", id.line, id.column);
+                reportError("Skalar '" + id.name + "' użyty jako tablica", id.line, id.column);
             }
         }
 
-        // Check uninitialized usage
         if (!sym->isArray && !writing && !sym->isInitialized)
         {
-            reportError("Using uninitialized variable '" + id.name + "'",
+            reportError("Użyto niezainicjalizowanej zmiennej '" + id.name + "'",
                         id.line, id.column);
         }
 
-        // Mark as initialized if writing
         if (writing && !sym->isArray)
         {
             sym->isInitialized = true;
         }
 
-        // Loop var immutability
         if (sym->isIterator && writing)
         {
-            reportError("Loop variable '" + id.name + "' cannot be modified",
+            reportError("Iterator pętli '" + id.name + "' nie może być modfikowany",
                         id.line, id.column);
         }
     }
 
-} // end namespace Compiler
+} // namespace Compiler

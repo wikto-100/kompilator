@@ -1,3 +1,6 @@
+/**
+ * \author: Wiktor Stojek nr. indeksu 272383
+ */
 #pragma once
 
 #include <string>
@@ -9,10 +12,8 @@ namespace Compiler
 {
 
     /**
-     * \brief The top-level container for all AST nodes,
-     *        including Symbol, ProgramAll, Procedure, etc.
+     * \brief Drzewo składniowe abstrakcyjne (AST) dla języka maszyny wirtualnej.
      *
-     * Everything is inside `class AST` to group them.
      */
     class AST
     {
@@ -22,20 +23,20 @@ namespace Compiler
         // ----------------------------------------------------------------------
         struct Symbol
         {
-            std::string name;
-            bool isProcedure = false;
-            bool isArray = false;
-            bool isRefParam = false;
-            bool isIterator = false;
-            long long arrayStart = 0;
-            long long arrayEnd = 0;
-            long long address = 0;
-            long long offsetCell = 0; // used if isArray==true
-            bool isInitialized = false;
+            std::string name;           // nazwa symbolu
+            bool isProcedure = false;   // czy symbol jest procedurą
+            bool isArray = false;       // czy symbol jest tablicą
+            bool isRefParam = false;    // czy symbol jest parametrem referencyjnym
+            bool isIterator = false;    // czy symbol jest iteratorem pętli FOR
+            long long arrayStart = 0;   // wartość początku tablicy
+            long long arrayEnd = 0;     // wartość końca tablicy
+            long long address = 0;      // komórka pamięci maszyny wirtualnej
+            long long offsetCell = 0;   // komórka pamięci przechowująca przesunięcie tablicy
+            bool isInitialized = false; // czy zmienna została zainicjalizowana
         };
 
         // ----------------------------------------------------------------------
-        // Forward Declarations
+        // Deklaracje w przód
         // ----------------------------------------------------------------------
         struct ProgramAll;
         struct Procedure;
@@ -47,53 +48,42 @@ namespace Compiler
         struct Value;
 
         // ----------------------------------------------------------------------
-        // Static Dump Function
-        // ----------------------------------------------------------------------
-        /**
-         * \brief Dump (print) the entire AST for debugging.
-         * \param root A const reference to the root ProgramAll node.
-         *
-         * This function does not modify the AST; it only reads and prints it.
-         */
-        static void DumpAST(const ProgramAll &root);
-
-        // ----------------------------------------------------------------------
-        // Identifier
+        // Identyfikatory
         // ----------------------------------------------------------------------
         enum class IdentifierIndexType
         {
-            NONE,
-            NUMERIC,
-            VARIABLE
+            NONE,    // brak indeksu
+            NUMERIC, // indeks stały
+            VARIABLE // indeks zmienny
         };
 
         struct Identifier
         {
-            std::string name;
-            IdentifierIndexType idxType = IdentifierIndexType::NONE;
-            long long indexNumber = 0;              ///< Valid if idxType == NUMERIC
-            std::string indexVar;                   ///< Valid if idxType == VARIABLE
-            std::shared_ptr<Symbol> indexVarSymbol; ///< Optional pointer to index variable symbol
-            std::shared_ptr<Symbol> symbol;         ///< Optional pointer to symbol table entry
-            int line = 0;                           ///< Source code line
-            int column = 0;                         ///< Source code column
+            std::string name;                                        // Nazwa identyfikatora
+            IdentifierIndexType idxType = IdentifierIndexType::NONE; // Typ indeksu (jeśli tablica)
+            long long indexNumber = 0;                               // Wartość indeksu (jeśli idxType == NUMERIC)
+            std::string indexVar;                                    // Nazwa zmiennej indeksującej (jeśli idxType == VARIABLE)
+            std::shared_ptr<Symbol> indexVarSymbol;                  // Wskaźnik indeksu do tablicy symboli
+            std::shared_ptr<Symbol> symbol;                          // Wskaźnik na symbol identyfikatora
+            int line = 0;                                            // Numer linii kodu źródłowego
+            int column = 0;                                          // Numer kolumny kodu źródłowego
         };
 
         // ----------------------------------------------------------------------
-        // Value
+        // Wartości
         // ----------------------------------------------------------------------
         /**
-         * \brief Represents either a numeric constant or an identifier.
+         * \brief Wartość: stała liczba lub identyfikator.
          */
         struct Value
         {
             bool isIdentifier = false;
-            long long numberValue = 0; ///< valid if !isIdentifier
-            Identifier identifier;     ///< valid if isIdentifier
+            long long numberValue = 0; // jeśli isIdentifier == false
+            Identifier identifier;     // jeśli isIdentifier == true
         };
 
         // ----------------------------------------------------------------------
-        // Expression
+        // Wyrażenia
         // ----------------------------------------------------------------------
         enum class ExprOp
         {
@@ -106,17 +96,17 @@ namespace Compiler
         };
 
         /**
-         * \brief An expression node: left op right, or just a single Value if op=NONE.
+         * \brief Wyrażenie binarne z operatorem i lewą/prawą wartością.
          */
         struct Expression
         {
-            ExprOp op = ExprOp::NONE;
-            std::shared_ptr<Value> left;  ///< Always used
-            std::shared_ptr<Value> right; ///< Used only if op != NONE
+            ExprOp op = ExprOp::NONE;     // Operator
+            std::shared_ptr<Value> left;  // Lewa wartość (zawsze używana, nawet jeśli op == NONE)
+            std::shared_ptr<Value> right; // Prawa wartość (używana tylko jeśli op != NONE)
         };
 
         // ----------------------------------------------------------------------
-        // Condition
+        // Warunki
         // ----------------------------------------------------------------------
         enum class CondOp
         {
@@ -129,17 +119,17 @@ namespace Compiler
         };
 
         /**
-         * \brief A condition node with an operator and left/right Value.
+         * \brief Warunek porównania dwóch wartości.
          */
         struct Condition
         {
-            CondOp op;
-            std::shared_ptr<Value> left;
-            std::shared_ptr<Value> right;
+            CondOp op;                    // Operator porównania
+            std::shared_ptr<Value> left;  // Lewa wartość
+            std::shared_ptr<Value> right; // Prawa wartość
         };
 
         // ----------------------------------------------------------------------
-        // IO Command
+        // Polecenia wejścia/wyjścia
         // ----------------------------------------------------------------------
         enum class IOType
         {
@@ -148,18 +138,17 @@ namespace Compiler
         };
 
         /**
-         * \brief A read or write command structure.
-         *        readTarget is used if ioType=READ; writeValue if ioType=WRITE.
+         * \brief Reprezentuje polecenie wejścia/wyjścia (READ/WRITE).
          */
         struct IOCommand
         {
-            IOType ioType;
-            std::optional<Identifier> readTarget;
-            std::optional<std::shared_ptr<Value>> writeValue;
+            IOType ioType;                                    // Typ polecenia
+            std::optional<Identifier> readTarget;             // tylko dla READ (identifier)
+            std::optional<std::shared_ptr<Value>> writeValue; // tylko dla WRITE (value)
         };
 
         // ----------------------------------------------------------------------
-        // Command
+        // Polecenia
         // ----------------------------------------------------------------------
         enum class CommandType
         {
@@ -175,7 +164,7 @@ namespace Compiler
             WRITE
         };
 
-        // Forward declarations of command-specific structs
+        // Deklaracje w przód
         struct AssignCmd;
         struct IfCmd;
         struct WhileCmd;
@@ -184,98 +173,98 @@ namespace Compiler
         struct ProcCallCmd;
 
         /**
-         * \brief A generic command node that can hold various sub-commands.
+         * \brief Polecenia w programie.
          */
         struct Command
         {
             CommandType type;
 
-            std::shared_ptr<AssignCmd> assignCmd;
-            std::shared_ptr<IfCmd> ifCmd;
-            std::shared_ptr<WhileCmd> whileCmd;
-            std::shared_ptr<RepeatCmd> repeatCmd;
-            std::shared_ptr<ForCmd> forCmd;
-            std::shared_ptr<ProcCallCmd> procCallCmd;
-            std::shared_ptr<IOCommand> ioCmd;
+            std::shared_ptr<AssignCmd> assignCmd;     // przypisanie
+            std::shared_ptr<IfCmd> ifCmd;             // instrukcja warunkowa IF
+            std::shared_ptr<WhileCmd> whileCmd;       // pętla WHILE
+            std::shared_ptr<RepeatCmd> repeatCmd;     // pętla REPEAT-UNTIL
+            std::shared_ptr<ForCmd> forCmd;           // pętla FOR
+            std::shared_ptr<ProcCallCmd> procCallCmd; // wywołanie procedury
+            std::shared_ptr<IOCommand> ioCmd;         // polecenie wejścia/wyjścia
         };
 
         // ----------------------------------------------------------------------
-        // Command-specific structs
+        // Struktury konkretnych poleceń
         // ----------------------------------------------------------------------
         struct AssignCmd
         {
-            Identifier lhs;
-            std::shared_ptr<Expression> rhs;
+            Identifier lhs;                  // lewa strona przypisania
+            std::shared_ptr<Expression> rhs; // wyrażenie przypisywane do lhs
         };
 
         struct IfCmd
         {
-            std::shared_ptr<Condition> condition;
-            std::vector<std::shared_ptr<Command>> thenCommands;
-            std::vector<std::shared_ptr<Command>> elseCommands;
+            std::shared_ptr<Condition> condition;               // warunek IF
+            std::vector<std::shared_ptr<Command>> thenCommands; // polecenia w IF
+            std::vector<std::shared_ptr<Command>> elseCommands; // polecenia w ELSE
         };
 
         struct WhileCmd
         {
-            std::shared_ptr<Condition> condition;
-            std::vector<std::shared_ptr<Command>> body;
+            std::shared_ptr<Condition> condition;       // warunek pętli
+            std::vector<std::shared_ptr<Command>> body; // polecenia w pętli
         };
 
         struct RepeatCmd
         {
-            std::vector<std::shared_ptr<Command>> body;
-            std::shared_ptr<Condition> condition;
+            std::vector<std::shared_ptr<Command>> body; // polecenia w pętli
+            std::shared_ptr<Condition> condition;       // warunek pętli REPEAT-UNTIL
         };
 
         struct ForCmd
         {
-            std::string loopVar;
-            bool downTo = false;
-            std::shared_ptr<Value> startValue;
-            std::shared_ptr<Value> endValue;
-            std::vector<std::shared_ptr<Command>> body;
+            std::string loopVar;                        // nazwa zmiennej pętli
+            bool downTo = false;                        // czy pętla ma być malejąca
+            std::shared_ptr<Value> startValue;          // wartość początku pętli
+            std::shared_ptr<Value> endValue;            // wartość końca pętli
+            std::vector<std::shared_ptr<Command>> body; // polecenia w pętli
 
-            std::shared_ptr<Symbol> loopVarSymbol;
-            long long helperCell = 0; // used for loop variable
+            std::shared_ptr<Symbol> loopVarSymbol; // konwertowane z loopVar
+            long long helperCell = 0;              // używana w przypadku pętli FORUP
         };
 
         struct ProcCallCmd
         {
-            std::string name;
-            std::vector<std::string> args;
-            std::vector<std::shared_ptr<Symbol>> argSymbols;
-            std::shared_ptr<Procedure> callee;
+            std::string name;                                // nazwa procedury
+            std::vector<std::string> args;                   // argumenty procedury
+            std::vector<std::shared_ptr<Symbol>> argSymbols; // konwertowane z args
+            std::shared_ptr<Procedure> callee;               // wywołana procedura
         };
 
         // ----------------------------------------------------------------------
-        // Declarations
+        // Deklaracje
         // ----------------------------------------------------------------------
         struct DeclItem
         {
-            std::string name;
-            bool isArray = false;
-            long long rangeStart = 0;
-            long long rangeEnd = 0;
-            std::shared_ptr<Symbol> symbol;
+            std::string name;               // nazwa deklarowanej zmiennej
+            bool isArray = false;           // czy zmienna jest tablicą
+            long long rangeStart = 0;       // początek zakresu tablicy (jeśli tablica)
+            long long rangeEnd = 0;         // koniec zakresu tablicy (jeśli tablica)
+            std::shared_ptr<Symbol> symbol; // wskaźnik na symbol deklarowanej zmiennej
         };
 
         struct Declarations
         {
-            std::vector<DeclItem> items;
+            std::vector<DeclItem> items; // deklaracje zmiennych
         };
 
         // ----------------------------------------------------------------------
-        // Procedure
+        // Procedury
         // ----------------------------------------------------------------------
         struct Procedure
         {
-            std::string name;
-            std::vector<std::pair<bool, std::string>> arguments; // gets converted to symbols
-            std::vector<std::shared_ptr<Symbol>> paramSymbols;
-            std::vector<std::shared_ptr<Declarations>> localDeclarations;
-            std::vector<std::shared_ptr<Command>> commands;
-            long long returnAddrCell = 0; // used for procedure return address
-            std::shared_ptr<Symbol> procSymbol;
+            std::string name;                                             // nazwa procedury
+            std::vector<std::pair<bool, std::string>> arguments;          // argumenty procedury
+            std::vector<std::shared_ptr<Symbol>> paramSymbols;            // symbole parametrów procedury
+            std::vector<std::shared_ptr<Declarations>> localDeclarations; // deklaracje lokalne procedury
+            std::vector<std::shared_ptr<Command>> commands;               // polecenia procedury
+            long long returnAddrCell = 0;                                 // komórka pamięci z adresem powrotu
+            std::shared_ptr<Symbol> procSymbol;                           // symbol procedury
         };
 
         // ----------------------------------------------------------------------
@@ -283,8 +272,8 @@ namespace Compiler
         // ----------------------------------------------------------------------
         struct Main
         {
-            std::vector<std::shared_ptr<Declarations>> declarations;
-            std::vector<std::shared_ptr<Command>> commands;
+            std::vector<std::shared_ptr<Declarations>> declarations; // deklaracje zmiennych
+            std::vector<std::shared_ptr<Command>> commands;          // polecenia programu głównego
         };
 
         // ----------------------------------------------------------------------
@@ -292,11 +281,9 @@ namespace Compiler
         // ----------------------------------------------------------------------
         struct ProgramAll
         {
-            std::vector<std::shared_ptr<Procedure>> procedures;
-            std::shared_ptr<Main> mainPart;
+            std::vector<std::shared_ptr<Procedure>> procedures; // procedury
+            std::shared_ptr<Main> mainPart;                     // program główny
         };
-
-
     };
 
 } // namespace Compiler

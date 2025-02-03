@@ -1,36 +1,28 @@
+/**
+ * \author: Wiktor Stojek nr. indeksu 272383
+ */
 #include "mem.hpp"
 
 namespace Compiler
 {
 
-    // -------------------------------------------------
-    // Public Entry Point
-    // -------------------------------------------------
+    // Główna funkcja przypisująca adresy pamięci.
     void MemoryMapper::assignAddresses(std::shared_ptr<AST::ProgramAll> root)
     {
         if (!root)
             return;
 
-        //
-        // --- Phase A: Map top-level declarations ---
-        //
-        // 1) Map each procedure’s labelProc, return-addr cell, parameters, local declarations
+        // Faza 1: mapowanie deklaracji procedur oraz głównej części.
         for (auto &proc : root->procedures)
         {
             mapProcedure(proc);
         }
-
-        // 2) Map the main part (global declarations)
         if (root->mainPart)
         {
             mapMain(root->mainPart);
         }
 
-        //
-        // --- Phase B: Traverse all commands to:
-        //       * map the loop variables in ForCmd (forCmd->loopVarSymbol)
-        //       * assign labels for IF/WHILE/REPEAT/FOR
-        //
+        // Faza 2: mapowanie komend w procedurach i głównej części.
         for (auto &proc : root->procedures)
         {
             if (!proc)
@@ -41,10 +33,10 @@ namespace Compiler
         {
             mapCommands(root->mainPart->commands);
         }
+
         computedAddress_RES_ = nextFreeAddress_++;
         computedAddress_TMP_ = nextFreeAddress_++;
 
-        
         T1_ = nextFreeAddress_++;
         T2_ = nextFreeAddress_++;
         T3_ = nextFreeAddress_++;
@@ -54,43 +46,30 @@ namespace Compiler
         T7_ = nextFreeAddress_++;
         T8_ = nextFreeAddress_++;
         T9_ = nextFreeAddress_++;
-
     }
 
-    // -------------------------------------------------
-    // Phase A: map a single Procedure
-    // -------------------------------------------------
+    // Mapowanie pojedynczej procedury.
     void MemoryMapper::mapProcedure(const std::shared_ptr<AST::Procedure> &proc)
     {
         if (!proc)
             return;
 
-
-
-        // 2) Reserve one cell for this procedure's return address
-        //    => when we call the procedure, we store the caller's IP here
         proc->returnAddrCell = nextFreeAddress_++;
 
-        // 3) If we have a procSymbol, mark it isProcedure
         if (proc->procSymbol)
         {
             proc->procSymbol->isProcedure = true;
-            // Typically we don't store a data address for procedures
         }
 
-        // 4) Map parameter symbols (e.g., reference params => 1 cell each)
         for (auto &paramSym : proc->paramSymbols)
         {
             mapSymbol(paramSym);
         }
 
-        // 5) Map local declarations -> each DeclItem has item.symbol
         mapLocalDeclarations(proc->localDeclarations);
     }
 
-    // -------------------------------------------------
-    // Phase A: map Main part
-    // -------------------------------------------------
+    // Mapowanie głównej części programu.
     void MemoryMapper::mapMain(const std::shared_ptr<AST::Main> &mainPart)
     {
         if (!mainPart)
@@ -98,9 +77,7 @@ namespace Compiler
         mapLocalDeclarations(mainPart->declarations);
     }
 
-    // -------------------------------------------------
-    // Map local declarations array
-    // -------------------------------------------------
+    // Mapowanie deklaracji lokalnych.
     void MemoryMapper::mapLocalDeclarations(const std::vector<std::shared_ptr<AST::Declarations>> &decls)
     {
         for (auto &decl : decls)
@@ -117,51 +94,37 @@ namespace Compiler
         }
     }
 
-    // -------------------------------------------------
-    // Assign memory for a single symbol
-    // -------------------------------------------------
+    // Przypisanie pamięci dla symbolu.
     void MemoryMapper::mapSymbol(const std::shared_ptr<AST::Symbol> &sym)
     {
         if (!sym)
             return;
         if (sym->isProcedure)
-            return; // No data memory for procedure symbols
+            return; // Brak pamięci danych dla procedur.
         if (sym->address != 0)
-            return; // Already assigned
+            return; // Adres już przypisany.
 
-        // If it's a reference parameter => 1 cell
         if (sym->isRefParam)
         {
             sym->address = nextFreeAddress_++;
             return;
         }
 
-        // If it's an array => pointerCell, offsetCell, then data
         if (sym->isArray)
         {
             long long length = sym->arrayEnd - sym->arrayStart + 1;
-
-            // pointerCell = nextFreeAddress_
-            // offsetCell  = nextFreeAddress_ + 1
-            // base        = nextFreeAddress_ + 2
             long long offsetCell = nextFreeAddress_;
             long long base = nextFreeAddress_ + 1;
-
             sym->offsetCell = offsetCell;
-            sym->address = base; // base = start of the array data
-
+            sym->address = base;
             nextFreeAddress_ += (length + 1);
-
             return;
         }
 
-        // Otherwise, a normal scalar => 1 cell
         sym->address = nextFreeAddress_++;
     }
 
-    // -------------------------------------------------
-    // Phase B: mapAndLabelCommands
-    // -------------------------------------------------
+    // Mapowanie zbioru komend.
     void MemoryMapper::mapCommands(const std::vector<std::shared_ptr<AST::Command>> &commands)
     {
         for (auto &cmd : commands)
@@ -170,6 +133,7 @@ namespace Compiler
         }
     }
 
+    // Mapowanie pojedynczej komendy.
     void MemoryMapper::mapCommand(const std::shared_ptr<AST::Command> &cmd)
     {
         if (!cmd)
@@ -182,8 +146,6 @@ namespace Compiler
         case CT::IF_THEN_ELSE:
             if (cmd->ifCmd)
             {
-
-                // Recurse into then/else
                 mapCommands(cmd->ifCmd->thenCommands);
                 mapCommands(cmd->ifCmd->elseCommands);
             }
@@ -192,7 +154,6 @@ namespace Compiler
         case CT::WHILE:
             if (cmd->whileCmd)
             {
-
                 mapCommands(cmd->whileCmd->body);
             }
             break;
@@ -208,30 +169,21 @@ namespace Compiler
         case CT::FOR_DOWNTO:
             if (cmd->forCmd)
             {
-                // 1) Map the loop variable symbol (ensures it has an address)
                 if (cmd->forCmd->loopVarSymbol)
                 {
                     mapSymbol(cmd->forCmd->loopVarSymbol);
                 }
                 if (!cmd->forCmd->downTo)
                 {
-                    // It's an upward FOR.
-                    // Allocate 1 new cell to store the countdown
                     cmd->forCmd->helperCell = nextFreeAddress_++;
                 }
-
-
-
-                // 3) Recurse into the FOR body
                 mapCommands(cmd->forCmd->body);
             }
             break;
 
         default:
-            // No label assignment for other commands
             break;
         }
     }
-
 
 } // namespace Compiler

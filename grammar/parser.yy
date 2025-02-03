@@ -4,36 +4,30 @@
 %defines
 %define api.namespace {Compiler}
 
-/** Name your parser class. */
+/** Autor: Wiktor Stojek, nr. indeksu 272383 */
+
+
 %define api.parser.class {Parser}
 
-/** Use std::variant for semantic values. */
+/** std::variant dla różnych typów */
 %define api.value.type variant
 
-/**
- * 1) Use `%code requires` to place includes in the top of the generated
- *    parser header, *before* Bison declares the variant or the AST-based types.
- */
 %code requires {
-   // Must see <memory> for std::shared_ptr:
-   #include <memory>
+   #include <memory> // std::shared_ptr
    #include <string>
    #include <vector>
    #include <optional>
 
-   // Must see your AST definitions (Identifier, Command, etc.):
+   // Definicje z AST
    #include "ast.hpp"
 
-   // We'll alias ::Compiler::AST as CA for convenience:
    using CA = ::Compiler::AST;
 
-   // Forward-declare your classes if needed:
    namespace Compiler {
       class Driver;
       class Scanner;
    }
 
-   // The following is missing when %locations isn't used:
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
 #   define YY_NULLPTR nullptr
@@ -43,26 +37,16 @@
 # endif
 }
 
-/** Parser parameters (the scanner & driver). */
 %parse-param { Compiler::Scanner  &scanner  }
 %parse-param { Compiler::Driver   &driver   }
 
-/**
- * 2) Use `%code top` or `%code` if you want additional code in the .tab.cc
- *    (implementation) but not the top of the header. 
- *    This code is appended to the parser's .cc file, not the top of the .hh.
- */
 %code top {
-   // Possibly you keep little or no includes here.
-   // Example:
    #include <iostream>
    #include <cstdlib>
    #include <fstream>
 }
 
-/** Additional code for the .cc side. */
 %code {
-   // Typically includes for your driver, or yylex redirection:
    #include "driver.hpp"
    #undef yylex
    #define yylex scanner.yylex
@@ -72,9 +56,9 @@
    }
 }
 
-/* ------------------------------------------------------------------
-   TOKEN DECLARATIONS (Terminals)
------------------------------------------------------------------- */
+/* =====================================================================
+   TOKENY
+   ===================================================================== */
 %token PROGRAM PROCEDURE IS
 %token KW_BEGIN
 %token KW_END
@@ -85,11 +69,9 @@
 %token READ WRITE
 %token T
 
-/* Identifiers and numbers (terminals) */
 %token <std::string> pidentifier
 %token <std::string> num
 
-/* Operators / punctuation */
 %token LBRACKET
 %token RBRACKET
 %token LPAREN
@@ -110,9 +92,9 @@
 %token GEQ
 %token LEQ
 
-/* ------------------------------------------------------------------
-   NONTERMINAL TYPE DECLARATIONS
------------------------------------------------------------------- */
+/* =====================================================================
+   NIETERMINALE
+   ===================================================================== */
 %type <std::shared_ptr<CA::ProgramAll>> program_all
 %type <std::vector<std::shared_ptr<CA::Procedure>>> procedures
 %type <std::shared_ptr<CA::Procedure>> proc_head
@@ -129,21 +111,19 @@
 %type <std::vector<std::pair<bool,std::string>>> args
 %type <std::shared_ptr<CA::ProcCallCmd>> proc_call
 
-/* The start symbol. */
 %start program_all
 
 %locations
 
 %%
 /* =====================================================================
-   GRAMMAR RULES
+   GRAMATYKA
    ===================================================================== */
 
 /* program_all -> procedures main */
 program_all:
     procedures main
     {
-      // Build a new ProgramAll node.
       auto root = std::make_shared<CA::ProgramAll>();
       // $1 is a std::vector<std::shared_ptr<CA::Procedure>>
       for (auto &p : $1) {
@@ -451,7 +431,8 @@ declarations:
     }
     | declarations COMMA pidentifier LBRACKET num COLON MINUS num RBRACKET
     {
-      // this rule will allways cause semantic error
+      // To zawsze spowoduje błąd semantyczny (w teorii)
+
       auto ds = $1;
       CA::DeclItem it;
       it.name = $3;
@@ -463,7 +444,7 @@ declarations:
     }
     | declarations COMMA pidentifier LBRACKET MINUS num COLON MINUS num RBRACKET
     {
-      // this rule will allways cause semantic error
+      // To zawsze spowoduje błąd semantyczny (w teorii)
       auto ds = $1;
       CA::DeclItem it;
       it.name = $3;
@@ -506,7 +487,7 @@ declarations:
     }
     | pidentifier LBRACKET num COLON MINUS num RBRACKET
     {
-      // this rule will allways cause semantic error
+      // To zawsze spowoduje błąd semantyczny (w teorii)
       auto ds = std::make_shared<CA::Declarations>();
       CA::DeclItem it;
       it.name = $1;
@@ -784,11 +765,8 @@ identifier:
 
 
 
-/* ------------------------------------------------------------------
-   Error handling method in your parser class
-------------------------------------------------------------------- */
 void 
 Compiler::Parser::error(const location_type &l, const std::string &err_message)
 {
-   std::cerr << "Error: " << err_message << " at " << l << "\n";
+   std::cerr << "Błąd (Bison): " << err_message << " linia.kolumna: " << l << "\n";
 }
