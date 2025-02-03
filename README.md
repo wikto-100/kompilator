@@ -1,6 +1,10 @@
 # Kompilator
 Autor: Wiktor Stojek nr. indeksu 272383<br />
-Projekt kompilatora prostego języka imperatywnego generującego kod dla maszyny wirtualnej, w ramach laboratorium JFTT2024 prowadzonego w semestrze zimowym 2024/2025 przez dr. Maćka Gębalę
+
+Kompilator języka imperatywnego dla maszyny wirtualnej.
+Projekt na labolatorium z przedmiotu Teoria Translacji i Języki formalne w semestrze zimowym 24/25.<br />
+Prowadzący: dr. Maciek Gębala
+
 Technologie: Flex, Bison, C++17.
 ## Struktura katalogów
 ```
@@ -112,9 +116,10 @@ Czyszczenie można przeprowadzić na dwa sposoby:
 Po zbudowaniu projektu, uruchomić kompilator z katalogu build:
 
 ```bash
-./compiler \<plik wejściowy\> \<plik wyjściowy\>
+./compiler <plik wejściowy> <plik wyjściowy>
 ```
 
 ## Licencja
 
-Projekt przeznaczony jest wyłącznie do celów akademickich. Zawiera elementy wygenerowane przez Bison, który jest dystrybuowany na licencji GNU General Public License (GPL) z wyjątkowym pozwoleniem na użycie szkieletu parsera w oprogramowaniu nieobjętym GPL, oraz elementy wygenerowane przez Flex, który jest dystrybuowany na licencji BSD (styl BSD). Źródła tego projektu są dostępne na zasadach licencyjnych przeznaczonych do użytku akademickiego.
+Projekt przeznaczony jest wyłącznie do celów akademickich. Zawiera elementy wygenerowane przez Bison, który jest dystrybuowany na licencji GNU General Public License (GPL) z wyjątkowym pozwoleniem na użycie szkieletu parsera w oprogramowaniu nieobjętym GPL, oraz elementy wygenerowane przez Flex, który jest dystrybuowany na licencji BSD (styl BSD). Źródła tego projektu są przeznaczone do użytku akademickiego.
+
